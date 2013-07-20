@@ -1,0 +1,11 @@
+#lang setup/infotab
+(define name "i3status")
+(define blurb '("Provides a customizable status bar for the i3 window manager."))
+(define primary-file "main.rkt")
+(define categories '(system ui))
+(define homepage "https://github.com/cmiles74/i3status")
+(define repository "https://github.com/cmiles74/i3status.git")
+(define version "1.1")
+(define repositories '("4.x"))
+(define release-notes '("Wrote up some documentation."))
+(define scribblings '(("main.scrbl")))
