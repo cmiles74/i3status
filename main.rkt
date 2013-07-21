@@ -1,19 +1,30 @@
 #lang racket
 
+;;
+;; Provides functions for specifying and creating an i3bar protocol compatible
+;; status bar.
+;;
 (provide (except-out (all-defined-out) header write-data write-header write-footer
-                     write-closing sample-status))
+                     write-closing sample-status system-time uptime cpu-time-sample))
 
 (require srfi/19)
 (require srfi/48)
 (require json)
 (require racket/file)
 
+;;
+;; Returns the current time formatted all pretty style.
+;;
 (define (system-time)
   (let ([map-out (make-hash)])
     (hash-set! map-out 'full_text (date->string (current-date) "~Y-~m-~d ~k:~M"))
     (hash-set! map-out 'short_text (date->string (current-date) "~k:~M"))
     map-out))
 
+;;
+;; Returns a map with the cuurent idle and uptime. The keys in this map
+;; are 'uptime and 'idle.
+;;
 (define (uptime)
   (let* [(uptime-raw (file->string "/proc/uptime"))
          (uptime-data (regexp-split #px"[[:space:]]+" uptime-raw))
@@ -22,6 +33,9 @@
     (hash-set! uptime-map 'idle (string->number (second uptime-data)))
     uptime-map))
 
+;;
+;; Computes the current CPU load (in jiffies).
+;;
 (define (cpu-time-sample)
   (apply +
          (map (lambda (dir-in)
@@ -35,7 +49,12 @@
                            (map (lambda (file-name)
                                   (regexp-match #px"[[:digit:]]+" file-name))
                                 (directory-list "/proc")))))))
-
+;;
+;; Returns a map with the current CPU load expressed as a percentage of the
+;; overall amount of CPU time available, this map is formatted such that it is
+;; compatible with the i3bar protocl. This value is computed by collecting
+;; two samples of the current CPU load gathered 250ms apart.
+;;
 (define (cpu-time)
   (let [(map-out (make-hash))
         (uptime-1 (hash-ref (uptime) 'uptime))
@@ -56,6 +75,10 @@
          [(< 50 avg-time) (hash-set! map-out 'color "#b58900")])
         map-out))))
 
+;;
+;; Returns a map with the status of the charge of battery 0. This map is
+;; formatted such that it is compatible with the i3bar protocol.
+;;
 (define (battery-charge)
   (let [(map-out (make-hash))
         (description (string-trim (file->string "/sys/class/power_supply/BAT0/status")))
@@ -78,6 +101,11 @@
                                             (hash-set! map-out 'urgent true)))]))
     map-out))
 
+;;
+;; Returns a map reporting the status of the Notmuch inbox. This is comprised of
+;; the total number of messages in the inbox followed by the number of unread
+;; messages. This is formatted such that it is compatible with the i3bar protocol.
+;;
 (define (mail)
   (let [(map-out (make-hash))
         (inbox (string-trim (with-output-to-string
@@ -91,6 +119,12 @@
       (hash-set! map-out 'urgent true))
     map-out))
 
+;;
+;; Returns a map reporting the current status of the Music Player Daemon. The
+;; long version includes the artist, trackname, action (playing or paused) as
+;; well as the elapsed and total track time. This map is formatted such that
+;; it is compatible with the i3bar protocol.
+;;
 (define (mpd)
   (let [(map-out (make-hash))
         (status (string-split (with-output-to-string
@@ -113,24 +147,48 @@
 ;; Private functions
 ;;
 
+;;
+;; Returns a hash with the i3bar header.
+;;
 (define (header)
   #hash((version . 1)
         (stop_signal . 10)
         (cont_signal . 12)))
 
+;;
+;; Writes the provided map of data to the current output port as JSON data.
+;;
 (define (write-data data-in)
   (fprintf (current-output-port) (jsexpr->string data-in)))
 
+;;
+;; Writes the i3bar header data to the current output port as JSON data.
+;;
 (define (write-header)
   (write-data (header))
   (fprintf (current-output-port) "["))
 
+;;
+;; Writes the i3bar status footer to the current output port as JSON data. This
+;; indicates the end of the current status bar refresh and prepares for the
+;; next.
+;;
 (define (write-footer)
   (fprintf (current-output-port) ","))
 
+;;
+;; Writes he i3bar status closing text to the current output port, completing a
+;; status bar session. In reality this function is never used, data is provided
+;; to i3 continously as long as it is running. This function is in place solely
+;; for testing (i.e., ensuring the JSON data is valid).
+;;
 (define (write-closing)
   (fprintf (current-output-port) "]\n"))
 
+;;
+;; Writes a sample batch of i3bar status data to the current output port as JSON
+;; data.
+;;
 (define (sample-status)
   (write-header)
   (write-data (filter (lambda (item) (< 0 (length (hash-keys item))))
@@ -138,6 +196,13 @@
   (write-closing)
   (flush-output))
 
+;;
+;; Starts the process that provides status data to i3. The function provided is
+;; expected to produce i3bar protocol compatible maps of data, this data is then
+;; assembled into a list, converted to JSON and then provided to i3. This
+;; function will be invoked once every 1000ms and this process will run
+;; continously.
+;;
 (define (start-status status-fn)
   (write-header)
   (let loop ()
