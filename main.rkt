@@ -12,6 +12,17 @@
 (require json)
 (require racket/file)
 
+;; Colors for the status output, these are roughly compatible with the "dark"
+;; Solarized theme.
+(define solarized-dark
+  #hash((blue     . "#268bd2")
+        (yellow   . "#b58900")
+        (red      . "#dc322f")
+        (magenta  . "#d33682")))
+
+;; Color scheme to use
+(define color-scheme solarized-dark)
+
 ;;
 ;; Returns the current time formatted all pretty style.
 ;;
@@ -22,7 +33,7 @@
     map-out))
 
 ;;
-;; Returns a map with the cuurent idle and uptime. The keys in this map
+;; Returns a map with the current idle and uptime. The keys in this map
 ;; are 'uptime and 'idle.
 ;;
 (define (uptime)
@@ -68,11 +79,14 @@
                          2))]
         (hash-set! map-out 'full_text (string-append "CPU: "
                                                      (format "~6,2F" avg-time)))
+
         (cond
          [(< 100 avg-time) (lambda () ((hash-set! map-out 'color "#d33682")
                                        (hash-set! map-out 'urgent true)))]
-         [(< 75 avg-time) (hash-set! map-out 'color "#dc322f")]
-         [(< 50 avg-time) (hash-set! map-out 'color "#b58900")])
+         [(< 75 avg-time) (hash-set! map-out 'color
+                                     (hash-ref color-scheme 'red))]
+         [(< 50 avg-time) (hash-set! map-out 'color
+                                     (hash-ref color-scheme 'yellow))])
         map-out))))
 
 ;;
@@ -94,10 +108,14 @@
                                                 [(string=? "Charging" description) "C"]
                                                 [(string=? "Discharging" description) "D"])
                               " " (format "~6,2F" charge-pct)))
+
           (cond
-           [(string=? "Discharging" description) (hash-set! map-out 'color "#268bd2")]
-           [(> 0.4 charge-pct) (hash-set! map-out 'color "#d33682")]
-           [(> 0.25 charge-pct) (lambda () ((hash-set! map-out 'color "#dc322f")
+           [(string=? "Discharging" description) (hash-set! map-out 'color
+                                                            (hash-ref color-scheme 'blue))]
+           [(> 0.4 charge-pct) (hash-set! map-out 'color
+                                          (hash-ref color-scheme 'magenta))]
+           [(> 0.25 charge-pct) (lambda () ((hash-set! map-out 'color
+                                                       (hash-ref color-scheme 'red))
                                             (hash-set! map-out 'urgent true)))]))
     map-out))
 
@@ -115,7 +133,7 @@
     (hash-set! map-out 'full_text
                (string-append "INBOX: " inbox "/" unread))
     (when (< 0 (string->number unread))
-      (hash-set! map-out 'color "#268bd2")
+      (hash-set! map-out 'color (hash-ref color-scheme 'blue))
       (hash-set! map-out 'urgent true))
     map-out))
 
@@ -140,7 +158,7 @@
         (hash-set! map-out 'short_text current)
         (cond
          [(string=? "[playing]" (first info))
-          (hash-set! map-out 'color "#268bd2")])))
+          (hash-set! map-out 'color (hash-ref color-scheme 'blue))])))
     map-out))
 
 ;;
