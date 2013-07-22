@@ -5,7 +5,7 @@
 ;; Provides a stream of continuous i3bar protocol compatible data that may be
 ;; used to populate the status bar area in the i3 window manager.
 ;;
-(require (planet cmiles74/i3status:1:1))
+(require (planet cmiles74/i3status:1:2))
 
 (start-status (lambda () (list (mpd)             ;; music player daemon status
                                (mail)            ;; notmuch inbox status

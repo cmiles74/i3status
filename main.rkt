@@ -5,7 +5,7 @@
 ;; status bar.
 ;;
 (provide (except-out (all-defined-out) header write-data write-header write-footer
-                     write-closing sample-status system-time uptime cpu-time-sample))
+                     write-closing sample-status uptime cpu-time-sample))
 
 (require srfi/19)
 (require srfi/48)
