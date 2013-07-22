@@ -12,24 +12,22 @@
 (require json)
 (require racket/file)
 
-;; Colors for the status output, these are roughly compatible with the "dark"
+;; Colors for the status output, these are roughly compatible with the
 ;; Solarized theme.
-(define solarized-dark
+(define solarized
   #hash((blue     . "#268bd2")
         (yellow   . "#b58900")
         (red      . "#dc322f")
         (magenta  . "#d33682")))
 
-;; Color scheme to use
-(define color-scheme solarized-dark)
-
 ;;
 ;; Returns the current time formatted all pretty style.
 ;;
-(define (system-time)
+(define (system-time #:full-format  [full-format "~Y-~m-~d ~k:~M"]
+                     #:short-format [short-format "~k:~M"])
   (let ([map-out (make-hash)])
-    (hash-set! map-out 'full_text (date->string (current-date) "~Y-~m-~d ~k:~M"))
-    (hash-set! map-out 'short_text (date->string (current-date) "~k:~M"))
+    (hash-set! map-out 'full_text (date->string (current-date) full-format))
+    (hash-set! map-out 'short_text (date->string (current-date) short-format))
     map-out))
 
 ;;
@@ -66,17 +64,19 @@
 ;; compatible with the i3bar protocl. This value is computed by collecting
 ;; two samples of the current CPU load gathered 250ms apart.
 ;;
-(define (cpu-time)
+(define (cpu-time #:color-scheme [color-scheme solarized]
+                  #:delay        [delay 0.25])
   (let [(map-out (make-hash))
         (uptime-1 (hash-ref (uptime) 'uptime))
         (sample-1 (cpu-time-sample))]
-    (sleep 0.25)
+    (sleep delay)
     (let [(uptime-2 (hash-ref (uptime) 'uptime))
           (sample-2 (cpu-time-sample))]
       (let [(avg-time (/ (* 1
                             (/ (- sample-2 sample-1)
                                (- uptime-2 uptime-1)))
                          2))]
+
         (hash-set! map-out 'full_text (string-append "CPU: "
                                                      (format "~6,2F" avg-time)))
 
@@ -93,13 +93,17 @@
 ;; Returns a map with the status of the charge of battery 0. This map is
 ;; formatted such that it is compatible with the i3bar protocol.
 ;;
-(define (battery-charge)
+(define (battery-charge #:color-scheme [color-scheme solarized]
+                        #:battery-path [battery-path "/sys/class/power_supply/BAT0"])
   (let [(map-out (make-hash))
-        (description (string-trim (file->string "/sys/class/power_supply/BAT0/status")))
+        (description (string-trim (file->string (string-append battery-path
+                                                               "/status"))))
         (charge-now (string->number (string-trim
-                                  (file->string "/sys/class/power_supply/BAT0/charge_now"))))
+                                  (file->string (string-append battery-path
+                                                               "/charge_now")))))
         (charge-full (string->number (string-trim
-                                   (file->string "/sys/class/power_supply/BAT0/charge_full_design"))))]
+                                   (file->string (string-append battery-path
+                                                                "/charge_full_design")))))]
     (let [(charge-pct (* 100 (/ charge-now charge-full)))]
           (hash-set! map-out 'full_text
                (string-append "BATTERY: " description " " (format "~6,2F" charge-pct)))
@@ -124,12 +128,16 @@
 ;; the total number of messages in the inbox followed by the number of unread
 ;; messages. This is formatted such that it is compatible with the i3bar protocol.
 ;;
-(define (mail)
+(define (mail #:color-scheme [color-scheme solarized]
+              #:unread-query [unread-query "tag:inbox"]
+              #:read-query   [read-query "tag:inbox and tag:unread"])
   (let [(map-out (make-hash))
         (inbox (string-trim (with-output-to-string
-                              (lambda () (system "notmuch count tag:inbox")))))
+                              (lambda () (system (string-append "notmuch count "
+                                                                unread-query))))))
         (unread (string-trim (with-output-to-string
-                               (lambda () (system "notmuch count tag:inbox and tag:unread")))))]
+                               (lambda () (system (string-append "notmuch count "
+                                                                 read-query))))))]
     (hash-set! map-out 'full_text
                (string-append "INBOX: " inbox "/" unread))
     (when (< 0 (string->number unread))
@@ -143,7 +151,7 @@
 ;; well as the elapsed and total track time. This map is formatted such that
 ;; it is compatible with the i3bar protocol.
 ;;
-(define (mpd)
+(define (mpd #:color-scheme [color-scheme solarized])
   (let [(map-out (make-hash))
         (status (string-split (with-output-to-string
                                 (lambda () (system "mpc"))) "\n"))
@@ -221,7 +229,7 @@
 ;; function will be invoked once every 1000ms and this process will run
 ;; continously.
 ;;
-(define (start-status status-fn)
+(define (start-status status-fn #:delay [delay 1])
   (write-header)
   (let loop ()
     (when true
@@ -229,5 +237,5 @@
                             (status-fn)))
       (write-footer)
       (flush-output)
-      (sleep 1)
+      (sleep delay)
       (loop))))

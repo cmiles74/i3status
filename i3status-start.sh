@@ -8,7 +8,7 @@
 (require (planet cmiles74/i3status:1:1))
 
 (start-status (lambda () (list (mpd)             ;; music player daemon status
-	      	      	       (mail)            ;; notmuch inbox status
-			       (battery-charge)  ;; current battery charge
-			       (cpu-time)        ;; CPU load over the last 250ms
-			       (system-time))))  ;; current system time
+                               (mail)            ;; notmuch inbox status
+                               (battery-charge)  ;; current battery charge
+                               (cpu-time)        ;; CPU load over the last 250ms
+                               (system-time))))  ;; current system time
