@@ -116,10 +116,9 @@
           (cond
            [(string=? "Discharging" description) (hash-set! map-out 'color
                                                             (hash-ref color-scheme 'blue))]
-           [(or (> 0.4 charge-pct)
-                (< 0.4 charge-pct)) (hash-set! map-out 'color
-                                             (hash-ref color-scheme 'magenta))]
-           [(> 0.25 charge-pct) (lambda () ((hash-set! map-out 'color
+           [(> 50 charge-pct) (hash-set! map-out 'color
+                                          (hash-ref color-scheme 'magenta))]
+           [(> 25 charge-pct) (lambda () ((hash-set! map-out 'color
                                                        (hash-ref color-scheme 'red))
                                             (hash-set! map-out 'urgent true)))]))
     map-out))
