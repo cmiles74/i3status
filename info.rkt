@@ -5,7 +5,7 @@
 (define categories '(system ui))
 (define homepage "https://github.com/cmiles74/i3status")
 (define repository "https://github.com/cmiles74/i3status.git")
-(define version "1.2")
+(define version "1.3")
 (define repositories '("4.x"))
 (define release-notes '("Add ability to customize colors and output"))
 (define scribblings '(("main.scrbl")))

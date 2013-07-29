@@ -81,12 +81,12 @@
                                                      (format "~6,2F" avg-time)))
 
         (cond
-         [(< 100 avg-time) (lambda () ((hash-set! map-out 'color "#d33682")
-                                       (hash-set! map-out 'urgent true)))]
          [(< 75 avg-time) (hash-set! map-out 'color
                                      (hash-ref color-scheme 'red))]
          [(< 50 avg-time) (hash-set! map-out 'color
-                                     (hash-ref color-scheme 'yellow))])
+                                     (hash-ref color-scheme 'yellow))]
+         [(< 50 avg-time) (lambda () ((hash-set! map-out 'color 'red)
+                                      (hash-set! map-out 'urgent true)))])
         map-out))))
 
 ;;
@@ -116,8 +116,9 @@
           (cond
            [(string=? "Discharging" description) (hash-set! map-out 'color
                                                             (hash-ref color-scheme 'blue))]
-           [(> 0.4 charge-pct) (hash-set! map-out 'color
-                                          (hash-ref color-scheme 'magenta))]
+           [(or (> 0.4 charge-pct)
+                (< 0.4 charge-pct)) (hash-set! map-out 'color
+                                             (hash-ref color-scheme 'magenta))]
            [(> 0.25 charge-pct) (lambda () ((hash-set! map-out 'color
                                                        (hash-ref color-scheme 'red))
                                             (hash-set! map-out 'urgent true)))]))
