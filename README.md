@@ -44,4 +44,4 @@ somewhere else.
 
 You can Check out the documentation on the
 [Racket Planet](http://planet.racket-lang.org/display.ss?package=i3status.plt&owner=cmiles74)
-for more informatio
+for more information.
