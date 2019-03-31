@@ -23,7 +23,7 @@
 ;;
 ;; Returns the current time formatted all pretty style.
 ;;
-(define (system-time #:full-format  [full-format "~Y-~m-~d ~k:~M"]
+(define (system-time #:full-format  [full-format "~m/~d/~Y ~k:~M"]
                      #:short-format [short-format "~k:~M"])
   (let ([map-out (make-hash)])
     (hash-set! map-out 'full_text (date->string (current-date) full-format))
@@ -139,7 +139,7 @@
                                (lambda () (system (string-append "notmuch count "
                                                                  read-query))))))]
     (hash-set! map-out 'full_text
-               (string-append "INBOX: " inbox "/" unread))
+               (string-append "Mail: " inbox "/" unread))
     (when (< 0 (string->number unread))
       (hash-set! map-out 'color (hash-ref color-scheme 'blue))
       (hash-set! map-out 'urgent true))
@@ -192,7 +192,7 @@
 ;;
 (define (write-header)
   (write-data (header))
-  (fprintf (current-output-port) "["))
+  (fprintf (current-output-port) "\n["))
 
 ;;
 ;; Writes the i3bar status footer to the current output port as JSON data. This
